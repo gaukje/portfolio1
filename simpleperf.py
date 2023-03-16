@@ -45,3 +45,12 @@ def server_mode(ip_address, port_number, file_size):
 
     # Close the server socket
     server_socket.close()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='TCP server for receiving data from clients')
+    parser.add_argument('ip_address', type=str, help='IP address to bind the server socket to')
+    parser.add_argument('port_number', type=int, help='Port number to bind the server socket to')
+    args = parser.parse_args()
+
+    server_mode(args.ip_address, args.port_number, 0)
