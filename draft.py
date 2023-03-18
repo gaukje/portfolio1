@@ -67,6 +67,18 @@ def handle_client(connection, client_address):
 
 # Client functions
 def client(server_ip, server_port, duration, interval, parallel, num_bytes=None):
+    threads = []
+    for _ in range(parallel):
+        client_thread = threading.Thread(target=client_worker,
+                                         args=(server_ip, server_port, duration, interval, num_bytes))
+        client_thread.start()
+        threads.append(client_thread)
+
+    for t in threads:
+        t.join()
+
+
+def client_worker(server_ip, server_port, duration, interval, num_bytes=None):
     try:
         with socket(AF_INET, SOCK_STREAM) as client_socket:
             client_socket.connect((server_ip, server_port))
@@ -88,50 +100,52 @@ def client(server_ip, server_port, duration, interval, parallel, num_bytes=None)
                 if interval and time.time() - last_interval_time >= interval:
                     print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval)
                     last_interval_time = time.time()
+                client_socket.sendall(b"BYE")
+                ack = client_socket.recv(1024)
 
-            client_socket.sendall(b"BYE")
-            ack = client_socket.recv(1024)
+                if ack == b"ACK:BYE":
+                    end_time = time.time()
+                    time_elapsed = end_time - start_time
 
-            if ack == b"ACK:BYE":
-                end_time = time.time()
-                time_elapsed = end_time - start_time
+                    sent_mb = sent_bytes / 1000 / 1000
+                    epsilon = 1e-9
+                    bandwidth_mbps = sent_mb / (time_elapsed + epsilon)
 
-                sent_mb = sent_bytes / 1000 / 1000
-                epsilon = 1e-9
-                bandwidth_mbps = sent_mb / (time_elapsed + epsilon)
-
-                headers = ["ID", "Interval", "Transfer", "Bandwidth"]
-                data_row = [
-                    f"{server_ip}:{server_port}",
-                    f"0.0 - {time_elapsed:.2f}",
-                    f"{sent_mb:.2f} MB",
-                    f"{bandwidth_mbps:.2f} Mbps"
-                ]
-                print(format_summary_line(headers, data_row))
+                    headers = ["ID", "Interval", "Transfer", "Bandwidth"]
+                    data_row = [
+                        f"{server_ip}:{server_port}",
+                        f"0.0 - {time_elapsed:.2f}",
+                        f"{sent_mb:.2f} MB",
+                        f"{bandwidth_mbps:.2f} Mbps"
+                    ]
+                    print(format_summary_line(headers, data_row))
 
     except ConnectionError as e:
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
 
-def print_interval(clientSocket: socket, startTime: float, sentBytes: int, serverIp: str, serverPort: int, interval: int):
-    timeElapsed = time.time() - startTime
-    sentMB = sentBytes / 1000 / 1000
-    bandwidthMPBS = sentMB / timeElapsed
+
+def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int,
+                   interval: int):
+    time_elapsed = time.time() - start_time
+    sent_mb = sent_bytes / 1000 / 1000
+    bandwidth_mbps = sent_mb / time_elapsed
 
     headers = ["ID", "Interval", "Transfer", "Bandwidth"]
-    dataRow = [
-        f"{serverIp}:{serverPort}",
-        f"{timeElapsed:.2f} - {timeElapsed + interval:.2f}",
-        f"{sentMB:.2f} MB",
-        f"{bandwidthMPBS:.2f} Mbps"
+    data_row = [
+        f"{server_ip}:{server_port}",
+        f"{time_elapsed:.2f} - {time_elapsed + interval:.2f}",
+        f"{sent_mb:.2f} MB",
+        f"{bandwidth_mbps:.2f} Mbps"
     ]
 
-    tableData = [headers, dataRow]
-    max_widths = [max(map(len, col)) for col in zip(*tableData)]
+    table_data = [headers, data_row]
+    max_widths = [max(map(len, col)) for col in zip(*table_data)]
 
-    for row in tableData:
+    for row in table_data:
         print(" ".join((val.ljust(width) for val, width in zip(row, max_widths))))
+
 
 
 if __name__ == "__main__":
@@ -144,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--format", type=str, choices=["B", "KB", "MB"], default="MB",
                         help="format of summary of results")
     parser.add_argument("-I", "--server_ip", type=str, help="IP address of the server")
-    parser.add_argument("-t", "--time", default=5,  type=int, help="Total duration for which data should be generated")
+    parser.add_argument("-t", "--time", type=int, help="Total duration for which data should be generated")
     parser.add_argument("-i", "--interval", type=int, help="print statistics per z second")
     parser.add_argument("-n", "--num", type=str, help="Number of bytes")
     parser.add_argument("-P", "--parallel", type=int, choices=range(1, 6), default=1,
@@ -156,11 +170,13 @@ if __name__ == "__main__":
         server(args.bind, args.port, args.format)
     elif args.client:
         if args.num:
-            numBytes = parse_num_bytes(args.num)
+            num_bytes = parse_num_bytes(args.num)
         else:
-            numBytes = None
+            num_bytes = None
 
-        client(args.server_ip, args.port, args.time, args.interval, args.parallel, numBytes)
+        client(args.server_ip, args.port, args.time, args.interval, args.parallel, num_bytes)
     else:
         print("Please specify server mode with -s or --server")
+
+
 
