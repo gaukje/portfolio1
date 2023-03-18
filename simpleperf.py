@@ -1,21 +1,22 @@
+"""
 import argparse
 import socket
 import time
 from socket import *
 
 
-def server(host, port, formatUnit):
+def server(serverIp, serverPort, formatUnit):
     # Create a socket
     serverSocket = socket(AF_INET, SOCK_STREAM)
 
     # Bind the socket to the specified host and port
-    serverSocket.bind((host, port))
+    serverSocket.bind((serverIp, serverPort))
 
     # Listen for incoming connections
     serverSocket.listen(5)
 
     print(f"---------------------------------------------")
-    print(f"A simpleperf server is listening on port {port}")
+    print(f"A simpleperf server is listening on port {serverPort}")
     print(f"---------------------------------------------")
 
     # Accept a connection
@@ -74,3 +75,4 @@ if __name__ == "__main__":
         server(args.bind, args.port, args.format)
     else:
         print("Please specify server mode with -s or --server")
+"""
