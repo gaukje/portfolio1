@@ -31,6 +31,15 @@ def server(serverIp, serverPort, formatUnit):
             connection.close()
 
             timeElapsed = endTime - startTime
+            received_data = receivedBytes / 1000 / 1000
+            bandwidth = received_data / timeElapsed
+
+            summary = f"Received {received_data:.2f} MB in {timeElapsed:.2f} seconds\n" \
+                      f"Bandwidth: {bandwidth:.2f} Mbps"
+            print(summary)
+
+            """
+            timeElapsed = endTime - startTime
             units = {
                 'B': receivedBytes,
                 'KB': receivedBytes / 1000,
@@ -49,7 +58,7 @@ def server(serverIp, serverPort, formatUnit):
             summary = f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
                       f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
             print(summary)
-
+            """
     except ConnectionError as e:
         print(f"Failed to connect to server: {e}")
 
@@ -68,7 +77,7 @@ def client(serverIp, serverPort, duration, interval, parallel, numBytes=None):
             startTime = time.time()
             lastIntervalTime = startTime
 
-            while (time.time() - startTime < duration) and ():
+            while (time.time() - startTime < duration) and (numBytes is None or sentBytes < numBytes):
                 data = b'0' * 1000
                 clientSocket.sendall(data)
                 sentBytes += len(data)
@@ -96,9 +105,9 @@ def client(serverIp, serverPort, duration, interval, parallel, numBytes=None):
 
 def parseNumBytes(num_str):
     units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
-    last_char = num_str[-1]
-    if last_char in units:
-        num = int(num_str[:-1]) * units[last_char]
+    lastChar = num_str[-1]
+    if lastChar in units:
+        num = int(num_str[:-1]) * units[lastChar]
     else:
         num = int(num_str)
     return num
@@ -106,7 +115,7 @@ def parseNumBytes(num_str):
 
 # ... (other parts of the code)
 
-def printInterval(clientSocket, startTime, sentBytes, serverIp, serverPort):
+def printInterval(clientSocket: socket, startTime: float, sentBytes: int, serverIp: str, serverPort: int, interval: int):
     timeElapsed = time.time() - startTime
     sentMB = sentBytes / 1000 / 1000
     bandwidthMPBS = sentMB / timeElapsed
@@ -136,9 +145,9 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--format", type=str, choices=["B", "KB", "MB"], default="MB",
                         help="format of summary of results")
     parser.add_argument("-I", "--server_ip", type=str, help="IP address of the server")
-    parser.add_argument("-t", "--time", type=int, help="Total duration for which data should be generated")
+    parser.add_argument("-t", "--time", default=5,  type=int, help="Total duration for which data should be generated")
     parser.add_argument("-i", "--interval", type=int, help="print statistics per z second")
-    parser.add_argument("n", "--num", type=str, help="Number of bytes")
+    parser.add_argument("-n", "--num", type=str, help="Number of bytes")
     parser.add_argument("-P", "--parallel", type=int, choices=range(1, 6), default=1,
                         help="creates parallel connections to connect to the server and send data - it must be 1 and the max value should be 5 - default:1")
 
