@@ -1,39 +1,60 @@
-import socket
 import argparse
 from socket import *
+import time
 
-def client(ip, port, path):
-    # Open file for reading
-    with open(path, 'rb') as file:
-        # Creating TCP socket and connecting to server
-        clientSocket = socket(AF_INET, SOCK_STREAM)
-        clientSocket.connect((ip, port))
+def client(serverIp, serverPort, duration):
+    # Creating socket
+    clientSocket = socket(AF_INET, SOCK_STREAM)
 
-        # Sending content in chunks of 1000 bytes
-        message = 0
-        while True:
-            data = file.read(1000)
-            if not data:
-                break
-            clientSocket.send(data)
-            message += len(data)
+    # Connecting to the server
+    clientSocket.connect((serverIp, serverPort))
 
-        # Receiving acknowledgement message from server
-        ack = clientSocket.recv(1000)
+    print("---------------------------------------------")
+    print(f"A simpleperf client connecting to server {serverIp}, port {serverPort}")
+    print("---------------------------------------------")
 
-        # Print the result
-        print("Sent {:.2f} MB to {}:{} and received acknowledgement: {}".format(
-             message / (1000 * 1000), ip, port, ack.decode()))
+    print(f"Client connected with {serverIp} port {serverPort}")
 
-        # Close the client socket
+    sentBytes = 0
+    startTime = time.time()
+
+    # Send data for the specified duration
+    while time.time() - startTime < duration:
+        data = b'0' * 1000
+        clientSocket.sendall(data)
+        sentBytes += len(data)
+
+    # Sending a 'BYE' message and waiting for acknowledgement
+    clientSocket.sendall(b"BYE")
+    ack = clientSocket.recv(1024)
+
+    if ack == b"ACK:BYE":
+        endTime = time.time()
+        timeElapsed = endTime -startTime
+
+        sentMB = sentBytes / 1000 / 1000
+        bandwidthMPBS = sentMB / timeElapsed
+
+        print(f"ID Interval Transfer Bandwidth")
+        print(f"{serverIp}:{serverPort} 0.0 - {timeElapsed:.2f} {sentMB:.2f} MB {bandwidthMPBS:.2f} Mbps")
+
         clientSocket.close()
 
 
-if __name__ == '__main__':
-        parser = argparse.ArgumentParser(description='TCP client for sending data to the server')
-        parser.add_argument('ip', type=str, help='IP address')
-        parser.add_argument('port', type=int, help='Port number')
-        parser.add_argument('path', type=str, help='Path of the file you wish to send')
-        args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="A simpleperf client")
 
-        client(args.ip, args.port, args.path)
+    parser.add_argument("-c", "--client", action="store_true", help="enable the client mode")
+    parser.add_argument("-I", "--server_ip", type=str, help="IP address of the server")
+    parser.add_argument("-p", "--server_port", type=int, help="port number of the server")
+    parser.add_argument("-t", "--time", type=int, help="total duration in seconds to send data")
+
+    args = parser.parse_args()
+
+    if args.client:
+        if args.server_ip and args.server_port and args.time:
+            client(args.server_ip, args.server_port, args.time)
+        else:
+            print("Please specify server IP, server port, and duration using -I, -p, and -t options")
+    else:
+        print("Please specify client mode with -c or --client")

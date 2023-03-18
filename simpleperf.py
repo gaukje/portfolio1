@@ -1,11 +1,12 @@
 import argparse
 import socket
 import time
+from socket import *
 
 
 def server(host, port, formatUnit):
     # Create a socket
-    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverSocket = socket(AF_INET, SOCK_STREAM)
 
     # Bind the socket to the specified host and port
     serverSocket.bind((host, port))
@@ -70,6 +71,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.server:
-        server(args.bind, args.port)
+        server(args.bind, args.port, args.format)
     else:
         print("Please specify server mode with -s or --server")
