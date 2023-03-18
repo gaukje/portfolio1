@@ -37,7 +37,27 @@ def server(server_ip, server_port):
             summary = f"Received {received_data:.2f} MB in {time_elapsed:.2f} seconds\n" \
                       f"Bandwidth: {bandwidth:.2f} Mbps"
             print(summary)
+            """
+            timeElapsed = endTime - startTime
+            units = {
+                'B': receivedBytes,
+                'KB': receivedBytes / 1000,
+                'MB': receivedBytes / 1000 / 1000,
+            }
+            receivedData = units[formatUnit]
 
+            bandwidthUnits = {
+                'B': 1,
+                'KB': 1000,
+                'MB': 1000 * 1000,
+            }
+
+            bandwidth = receivedBytes / timeElapsed / bandwidthUnits[formatUnit]
+
+            summary = f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
+                      f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
+            print(summary)
+            """
     except ConnectionError as e:
         print(f"Failed to connect to server: {e}")
 

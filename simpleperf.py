@@ -2,6 +2,7 @@ import argparse
 import time
 from socket import *
 import sys
+import threading
 
 
 def server(serverIp, serverPort, formatUnit):
@@ -14,53 +15,37 @@ def server(serverIp, serverPort, formatUnit):
             print(f"A simpleperf server is listening on port {serverPort}")
             print(f"---------------------------------------------")
 
-            connection, clientAddress = serverSocket.accept()
-
-            receivedBytes = 0
-            startTime = time.time()
-
             while True:
-                data = connection.recv(1000)
-                if data == b"BYE":
-                    connection.sendall(b"ACK:BYE")
-                    break
+                connection, clientAddress = serverSocket.accept()
+                client_thread = threading.Thread(target=handle_client, args=(connection, clientAddress))
+                client_thread.start()
 
-                receivedBytes += len(data)
-
-            endTime = time.time()
-            connection.close()
-
-            timeElapsed = endTime - startTime
-            received_data = receivedBytes / 1000 / 1000
-            bandwidth = received_data / timeElapsed
-
-            summary = f"Received {received_data:.2f} MB in {timeElapsed:.2f} seconds\n" \
-                      f"Bandwidth: {bandwidth:.2f} Mbps"
-            print(summary)
-
-            """
-            timeElapsed = endTime - startTime
-            units = {
-                'B': receivedBytes,
-                'KB': receivedBytes / 1000,
-                'MB': receivedBytes / 1000 / 1000,
-            }
-            receivedData = units[formatUnit]
-
-            bandwidthUnits = {
-                'B': 1,
-                'KB': 1000,
-                'MB': 1000 * 1000,
-            }
-
-            bandwidth = receivedBytes / timeElapsed / bandwidthUnits[formatUnit]
-
-            summary = f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
-                      f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
-            print(summary)
-            """
     except ConnectionError as e:
         print(f"Failed to connect to server: {e}")
+
+
+def handle_client(connection, clientAddress):
+    receivedBytes = 0
+    startTime = time.time()
+
+    while True:
+        data = connection.recv(1000)
+        if data == b"BYE":
+            connection.sendall(b"ACK:BYE")
+            break
+
+        receivedBytes += len(data)
+
+    endTime = time.time()
+    connection.close()
+
+    timeElapsed = endTime - startTime
+    received_data = receivedBytes / 1000 / 1000
+    bandwidth = received_data / timeElapsed
+
+    summary = f"Received {received_data:.2f} MB in {timeElapsed:.2f} seconds\n" \
+              f"Bandwidth: {bandwidth:.2f} Mbps"
+    print(summary)
 
 
 def client(serverIp, serverPort, duration, interval, parallel, numBytes=None):
@@ -83,7 +68,7 @@ def client(serverIp, serverPort, duration, interval, parallel, numBytes=None):
                 sentBytes += len(data)
 
             if interval and time.time() - lastIntervalTime >= interval:
-                printInterval(clientSocket, startTime, sentBytes, serverIp, serverPort)
+                printInterval(clientSocket, startTime, sentBytes, serverIp, serverPort, interval)
                 lastIntervalTime = time.time()
 
             clientSocket.sendall(b"BYE")
@@ -94,7 +79,8 @@ def client(serverIp, serverPort, duration, interval, parallel, numBytes=None):
                 timeElapsed = endTime - startTime
 
                 sentMB = sentBytes / 1000 / 1000
-                bandwidthMPBS = sentMB / timeElapsed
+                epsilon = 1e-9
+                bandwidthMPBS = sentMB / (timeElapsed + epsilon)
 
                 print(f"ID Interval Transfer Bandwidth")
                 print(f"{serverIp}:{serverPort} 0.0 - {timeElapsed:.2f} {sentMB:.2f} MB {bandwidthMPBS:.2f} Mbps")
