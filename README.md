@@ -1,4 +1,3 @@
-Sure! I'll explain the entire code, including both the server and client modes.
 
     Import necessary libraries:
     The code imports the required libraries for sockets, threading, argparse (for command-line argument parsing), and the time module.
