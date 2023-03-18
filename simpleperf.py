@@ -3,7 +3,7 @@ import socket
 import time
 
 
-def server(host, port):
+def server(host, port, formatUnit):
     # Create a socket
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -11,42 +11,75 @@ def server(host, port):
     serverSocket.bind((host, port))
 
     # Listen for incoming connections
-    serverSocket.listen(1)
+    serverSocket.listen(5)
 
     print(f"---------------------------------------------")
     print(f"A simpleperf server is listening on port {port}")
     print(f"---------------------------------------------")
 
     # Accept a connection
-    connection, client_address = serverSocket.accept()
+    connection, clientAddress = serverSocket.accept()
 
-    total_received_bytes = 0
-    start_time = time.time()
+    receivedBytes = 0
+    startTime = time.time()
 
     try:
         while True:
             # Receive data in chunks of 1000 bytes
             data = connection.recv(1000)
-            total_received_bytes += len(data)
-
-            if not data:
+            if data == b"BYE":
+                connection.sendall(b"ACK:BYE")
                 break
 
+            receivedBytes += len(data)
+
     finally:
-        end_time = time.time()
+
+        endTime = time.time()
         connection.close()
 
-        elapsed_time = end_time - start_time
-        received_kilobytes = total_received_bytes / 1000
-        received_megabytes = received_kilobytes / 1000
+        timeElapsed = endTime - startTime
+        units = {
+            'B': receivedBytes,
+            'KB': receivedBytes / 1000,
+            'MB': receivedBytes / 1000 / 1000,
+        }
+        receivedData = units[formatUnit]
 
-        bandwidth_kbps = received_kilobytes / elapsed_time
-        bandwidth_mbps = received_megabytes / elapsed_time
+        bandwidthUnits = {
+            'B': 1,
+            'KB': 1000,
+            'MB': 1000 * 1000,
+        }
 
-        print(f"Received {received_megabytes:.2f} MB in {elapsed_time:.2f} seconds")
-        print(f"Bandwidth: {bandwidth_kbps:.2f} Kbps ({bandwidth_mbps:.2f} Mbps)")
+        bandwidth = receivedBytes / timeElapsed / bandwidthUnits[formatUnit]
+
+        return f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
+               f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
 
 
+
+"""
+def formatSummary(receivedBytes, timeElapsed, formatUnit):
+    units = {
+        'B': receivedBytes,
+        'KB': receivedBytes / 1000,
+        'MB': receivedBytes / 1000 / 1000,
+    }
+    receivedData = units[formatUnit]
+
+    bandwidthUnits = {
+        'B': 1,
+        'KB': 1000,
+        'MB': 1000 * 1000,
+    }
+
+    bandwidth = receivedBytes / timeElapsed / bandwidthUnits[formatUnit]
+
+    return f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
+           f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
+
+"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simpleperf server")
 
@@ -59,5 +92,7 @@ if __name__ == "__main__":
 
     if args.server:
         server(args.bind, args.port)
+        # summary = formatSummary(receivedBytes, timeElapsed, args.format)
+        # print(summary)
     else:
         print("Please specify server mode with -s or --server")
