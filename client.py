@@ -2,43 +2,39 @@ import argparse
 from socket import *
 import time
 
+
 def client(serverIp, serverPort, duration):
-    # Creating socket
-    clientSocket = socket(AF_INET, SOCK_STREAM)
+    # Creating socket and connecting to the server
+    with socket(AF_INET, SOCK_STREAM) as clientSocket:
+        clientSocket.connect((serverIp, serverPort))  # Automatically closes the socket when the block is exited
 
-    # Connecting to the server
-    clientSocket.connect((serverIp, serverPort))
+        print("---------------------------------------------")
+        print(f"A simpleperf client connecting to server {serverIp}, port {serverPort}")
+        print("---------------------------------------------")
+        print(f"Client connected with {serverIp} port {serverPort}")
 
-    print("---------------------------------------------")
-    print(f"A simpleperf client connecting to server {serverIp}, port {serverPort}")
-    print("---------------------------------------------")
+        sentBytes = 0
+        startTime = time.time()
 
-    print(f"Client connected with {serverIp} port {serverPort}")
+        # Send data for the specified duration
+        while time.time() - startTime < duration:
+            data = b'0' * 1000
+            clientSocket.sendall(data)
+            sentBytes += len(data)
 
-    sentBytes = 0
-    startTime = time.time()
+        # Sending a 'BYE' message and waiting for acknowledgement
+        clientSocket.sendall(b"BYE")
+        ack = clientSocket.recv(1024)
 
-    # Send data for the specified duration
-    while time.time() - startTime < duration:
-        data = b'0' * 1000
-        clientSocket.sendall(data)
-        sentBytes += len(data)
+        if ack == b"ACK:BYE":
+            endTime = time.time()
+            timeElapsed = endTime - startTime
 
-    # Sending a 'BYE' message and waiting for acknowledgement
-    clientSocket.sendall(b"BYE")
-    ack = clientSocket.recv(1024)
+            sentMB = sentBytes / 1000 / 1000
+            bandwidthMPBS = sentMB / timeElapsed
 
-    if ack == b"ACK:BYE":
-        endTime = time.time()
-        timeElapsed = endTime -startTime
-
-        sentMB = sentBytes / 1000 / 1000
-        bandwidthMPBS = sentMB / timeElapsed
-
-        print(f"ID Interval Transfer Bandwidth")
-        print(f"{serverIp}:{serverPort} 0.0 - {timeElapsed:.2f} {sentMB:.2f} MB {bandwidthMPBS:.2f} Mbps")
-
-        clientSocket.close()
+            print(f"ID Interval Transfer Bandwidth")
+            print(f"{serverIp}:{serverPort} 0.0 - {timeElapsed:.2f} {sentMB:.2f} MB {bandwidthMPBS:.2f} Mbps")
 
 
 if __name__ == "__main__":
