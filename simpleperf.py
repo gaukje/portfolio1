@@ -54,32 +54,11 @@ def server(host, port, formatUnit):
 
         bandwidth = receivedBytes / timeElapsed / bandwidthUnits[formatUnit]
 
-        return f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
-               f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
+        summary = f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
+                  f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
+        print(summary)
 
 
-
-"""
-def formatSummary(receivedBytes, timeElapsed, formatUnit):
-    units = {
-        'B': receivedBytes,
-        'KB': receivedBytes / 1000,
-        'MB': receivedBytes / 1000 / 1000,
-    }
-    receivedData = units[formatUnit]
-
-    bandwidthUnits = {
-        'B': 1,
-        'KB': 1000,
-        'MB': 1000 * 1000,
-    }
-
-    bandwidth = receivedBytes / timeElapsed / bandwidthUnits[formatUnit]
-
-    return f"Received {receivedData:.2f} {formatUnit} in {timeElapsed:.2f} seconds\n" \
-           f"Bandwidth: {bandwidth:.2f} {formatUnit}ps"
-
-"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simpleperf server")
 
@@ -92,7 +71,5 @@ if __name__ == "__main__":
 
     if args.server:
         server(args.bind, args.port)
-        # summary = formatSummary(receivedBytes, timeElapsed, args.format)
-        # print(summary)
     else:
         print("Please specify server mode with -s or --server")
