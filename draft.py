@@ -143,6 +143,9 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
             print(" ".join((val.ljust(width) for val, width in zip(row, max_widths))))
 
 
+def parse_format_unit(format_unit):
+    units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
+    return {'unit': format_unit, 'divisor': units[format_unit]}
 
 
 if __name__ == "__main__":
@@ -161,20 +164,21 @@ if __name__ == "__main__":
     parser.add_argument("-P", "--parallel", type=int, choices=range(1, 6), default=1,
                         help="creates parallel connections to connect to the server and send data - it must be 1 and "
                              "the max value should be 5 - default:1")
+    parser.add_argument("-m", "--message_size", type=int, default=1000,
+                        help="Number of bytes in each message sent by the client")
 
     args = parser.parse_args()
 
     if args.server:
-        server(args.bind, args.port, args.format)
+        format_unit = parse_format_unit(args.format)
+        server(args.bind, args.port, format_unit)
     elif args.client:
         if args.num:
             num_bytes = parse_num_bytes(args.num)
         else:
             num_bytes = None
 
-        client(args.server_ip, args.port, args.time, args.interval, args.parallel, num_bytes)
+        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size, num_bytes)
     else:
         print("Please specify server mode with -s or --server")
-
-
 
