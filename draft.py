@@ -157,9 +157,9 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", type=int, default=8080, help="port number on which the server should listen")
     parser.add_argument("-f", "--format", type=str, choices=["B", "KB", "MB"], default="MB",
                         help="format of summary of results")
-    parser.add_argument("-I", "--server_ip", type=str, help="IP address of the server")
-    parser.add_argument("-t", "--time", type=int, help="Total duration for which data should be generated")
-    parser.add_argument("-i", "--interval", type=int, help="print statistics per z second")
+    parser.add_argument("-I", "--server_ip", type=str, default="127.0.0.1", help="IP address of the server")
+    parser.add_argument("-t", "--time", type=int, default=25, help="Total duration for which data should be generated")
+    parser.add_argument("-i", "--interval", type=int, default=None, help="print statistics per z second")
     parser.add_argument("-n", "--num", type=str, help="Number of bytes")
     parser.add_argument("-P", "--parallel", type=int, choices=range(1, 6), default=1,
                         help="creates parallel connections to connect to the server and send data - it must be 1 and "
