@@ -34,14 +34,14 @@ def server(server_ip, server_port, format_unit):
 
             while True:
                 connection, client_address = server_socket.accept()
-                client_thread = threading.Thread(target=handle_client, args=(connection, client_address))
+                client_thread = threading.Thread(target=handle_client, args=(connection, client_address, format_unit))
                 client_thread.start()
 
     except ConnectionError as e:
         print(f"Failed to connect to server: {e}")
 
 
-def handle_client(connection, client_address):
+def handle_client(connection, client_address, format_unit):
     received_bytes = 0
     start_time = time.time()
 
@@ -57,11 +57,12 @@ def handle_client(connection, client_address):
     connection.close()
 
     time_elapsed = end_time - start_time
-    received_data = received_bytes / 1000 / 1000
+    received_data = received_bytes / format_unit['divisor']
     bandwidth = received_data / time_elapsed
 
-    summary = f"Received {received_data:.2f} MB in {time_elapsed:.2f} seconds\n" \
-              f"Bandwidth: {bandwidth:.2f} Mbps"
+    # Modify the summary line to use format_unit
+    summary = f"Received {received_data:.2f} {format_unit['unit']} in {time_elapsed:.2f} seconds\n" \
+              f"Bandwidth: {bandwidth:.2f} {format_unit['unit']}/s"
     print(summary)
 
 
@@ -82,7 +83,7 @@ def client(server_ip, server_port, duration, interval, parallel, num_bytes=None)
         sys.exit(1)
 
 
-def client_worker(server_ip, server_port, duration, interval, num_bytes=None):
+def client_worker(server_ip, server_port, duration, interval,message_size, num_bytes=None):
     try:
         with socket(AF_INET, SOCK_STREAM) as client_socket:
             client_socket.connect((server_ip, server_port))
@@ -97,7 +98,7 @@ def client_worker(server_ip, server_port, duration, interval, num_bytes=None):
             last_interval_time = start_time
 
             while (time.time() - start_time < duration) and (num_bytes is None or sent_bytes < num_bytes):
-                data = b'0' * 1000
+                data = b'0' * message_size
                 client_socket.sendall(data)
                 sent_bytes += len(data)
 
