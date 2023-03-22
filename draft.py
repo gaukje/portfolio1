@@ -6,6 +6,7 @@ from socket import *
 
 
 # Utility functions
+# parse_num_bytes(num_str): Converts a number string with a unit (B, KB, MB) to its corresponding integer value in bytes.
 def parse_num_bytes(num_str):
     units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
     last_char = num_str[-1]
@@ -15,13 +16,14 @@ def parse_num_bytes(num_str):
         num = int(num_str)
     return num
 
-
+# format_summary_line(headers, data): Formats a summary line for printing, with the columns aligned based on the maximum width of each column.
 def format_summary_line(headers, data):
     max_widths = [max(map(len, col)) for col in zip(headers, data)]
     return " ".join((val.ljust(width) for val, width in zip(data, max_widths)))
 
 
 # Server functions
+# server(server_ip, server_port, format_unit): Sets up a server listening on the given IP and port, and accepts incoming connections. For each connection, a new thread is started to handle the client.
 def server(server_ip, server_port, format_unit):
     try:
         with socket(AF_INET, SOCK_STREAM) as server_socket:
@@ -41,6 +43,7 @@ def server(server_ip, server_port, format_unit):
         print(f"Failed to connect to server: {e}")
 
 
+#handle_client(connection, client_address, format_unit): Receives data from the client, calculates the received data size and bandwidth, and prints a summary.
 def handle_client(connection, client_address, format_unit):
     received_bytes = 0
     start_time = time.time()
@@ -67,6 +70,7 @@ def handle_client(connection, client_address, format_unit):
 
 
 # Client functions
+# client(server_ip, server_port, duration, interval, parallel, num_bytes=None): Starts the client, which creates the specified number of parallel connections to the server and sends data.
 def client(server_ip, server_port, duration, interval, parallel, num_bytes=None):
     try:
         threads = []
@@ -82,7 +86,7 @@ def client(server_ip, server_port, duration, interval, parallel, num_bytes=None)
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
-
+# client_worker(server_ip, server_port, duration, interval, message_size, num_bytes=None): Connects to the server, sends data to it for the given duration, and prints statistics at specified intervals.
 def client_worker(server_ip, server_port, duration, interval,message_size, num_bytes=None):
     try:
         with socket(AF_INET, SOCK_STREAM) as client_socket:
@@ -118,7 +122,7 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
-
+# print_interval(...): Prints the statistics for a given interval, including bandwidth and the amount of data transferred.
 def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, summary=False):
     time_elapsed = time.time() - start_time
     interval_start = time_elapsed - interval
@@ -143,6 +147,7 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
             print(" ".join((val.ljust(width) for val, width in zip(row, max_widths))))
 
 
+# parse_format_unit(format_unit): Parses the format unit string and returns a dictionary with the unit and its corresponding divisor.
 def parse_format_unit(format_unit):
     units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
     return {'unit': format_unit, 'divisor': units[format_unit]}
