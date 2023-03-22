@@ -178,7 +178,7 @@ if __name__ == "__main__":
         else:
             num_bytes = None
 
-        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size, num_bytes)
+        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size)
     else:
         print("Please specify server mode with -s or --server")
 
