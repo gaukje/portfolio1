@@ -98,8 +98,10 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
             print(f"Client connected with {server_ip} port {server_port}")
 
             sent_bytes = 0
+            prev_sent_bytes = 0
             start_time = time.time()
             last_interval_time = start_time
+
 
             while (time.time() - start_time < duration) and (num_bytes is None or sent_bytes < num_bytes):
                 data = b'0' * message_size
@@ -107,7 +109,8 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
                 sent_bytes += len(data)
 
                 if interval and time.time() - last_interval_time >= interval:
-                    print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval)
+                    print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval, prev_sent_bytes)
+                    prev_sent_bytes = sent_bytes  # Update the prev_sent_bytes value
                     last_interval_time = time.time()
 
             client_socket.sendall(b"BYE")
