@@ -123,11 +123,12 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
         sys.exit(1)
 
 # print_interval(...): Prints the statistics for a given interval, including bandwidth and the amount of data transferred.
-def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, summary=False):
+def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, prev_sent_bytes: int = 0, summary=False):
     time_elapsed = time.time() - start_time
     interval_start = time_elapsed - interval
     sent_mb = sent_bytes / 1000 / 1000
-    bandwidth_mbps = sent_mb / interval
+    sent_mb_interval = (sent_bytes - prev_sent_bytes) / 1000 / 1000
+    bandwidth_mbps = sent_mb_interval / interval
 
     headers = ["ID", "Interval", "Transfer", "Bandwidth"]
     data_row = [
