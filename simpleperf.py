@@ -31,7 +31,8 @@ def format_summary_line(headers, data):
 
 # Server functions
 
-# Sets up a server listening on the given IP and port, and accepts incoming connections. For each connection, a new thread is started to handle the client.
+# Sets up a server listening on the given IP and port, and accepts incoming connections. For each connection, a new
+# thread is started to handle the client.
 # Arguments: server_ip (string) - The IP address of the server.
 #            server_port (int) - The port number on which the server should listen.
 #            format_unit (dict) - A dictionary containing the format unit and its corresponding divisor.
@@ -231,7 +232,6 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
 
         for row in table_data:
             print(" ".join((val.ljust(width) for val, width in zip(row, max_widths))))
-
 
 
 # This function parses the format unit string and returns a dictionary with the unit and its corresponding divisor.
