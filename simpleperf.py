@@ -72,11 +72,11 @@ def handle_client(connection, client_address, format_unit):
 
 # Client functions
 # client(server_ip, server_port, duration, interval, parallel, num_bytes=None): Starts the client, which creates the specified number of parallel connections to the server and sends data.
-def client(server_ip, server_port, duration, interval, parallel, num_bytes=None):
+def client(server_ip, server_port, duration, interval, parallel,message_size, format_unit, num_bytes=None):
     try:
         threads = []
         for _ in range(parallel):
-            t = threading.Thread(target=client_worker, args=(server_ip, server_port, duration, interval, num_bytes))
+            t = threading.Thread(target=client_worker, args=(server_ip, server_port, duration, interval, message_size, format_unit, num_bytes))
             t.start()
             threads.append(t)
 
@@ -88,7 +88,7 @@ def client(server_ip, server_port, duration, interval, parallel, num_bytes=None)
         sys.exit(1)
 
 # client_worker(server_ip, server_port, duration, interval, message_size, num_bytes=None): Connects to the server, sends data to it for the given duration, and prints statistics at specified intervals.
-def client_worker(server_ip, server_port, duration, interval,message_size, num_bytes=None):
+def client_worker(server_ip, server_port, duration, interval, message_size, format_unit, num_bytes=None):
     try:
         with socket(AF_INET, SOCK_STREAM) as client_socket:
             client_socket.connect((server_ip, server_port))
@@ -103,14 +103,14 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
             start_time = time.time()
             last_interval_time = start_time
 
-
             while (time.time() - start_time < duration) and (num_bytes is None or sent_bytes < num_bytes):
                 data = b'0' * message_size
                 client_socket.sendall(data)
                 sent_bytes += len(data)
 
                 if interval and time.time() - last_interval_time >= interval:
-                    print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval, prev_sent_bytes)
+                    print_interval(start_time, sent_bytes, server_ip, server_port, interval, prev_sent_bytes)
+
                     prev_sent_bytes = sent_bytes  # Update the prev_sent_bytes value
                     last_interval_time = time.time()
 
@@ -121,27 +121,35 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
                 end_time = time.time()
                 time_elapsed = end_time - start_time
                 interval = time_elapsed if interval is None else interval
-                print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval, prev_sent_bytes,
-                               summary=True)
+                sent_data = sent_bytes / format_unit['divisor']
+                sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
+                bandwidth = sent_data_interval / interval
+
+                summary = format_summary_line(["Received", "Bandwidth"],
+                                              [f"{sent_data:.2f} {format_unit['unit']}", f"{bandwidth:.2f} {format_unit['unit']}/s"])
+                print(f"Client: {summary}")
 
     except ConnectionError as e:
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
+
 # print_interval(...): Prints the statistics for a given interval, including bandwidth and the amount of data transferred.
-def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, prev_sent_bytes: int = 0, summary=False):
+def print_interval(start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, prev_sent_bytes: int = 0, summary=False):
+
     time_elapsed = time.time() - start_time
     interval_start = time_elapsed - interval
     sent_mb = sent_bytes / 1000 / 1000
     sent_mb_interval = (sent_bytes - prev_sent_bytes) / 1000 / 1000
-    bandwidth_mbps = sent_mb_interval / interval
+    bandwidth = sent_mb_interval / interval * format_unit['divisor']
+
 
     headers = ["ID", "Interval", "Transfer", "Bandwidth"]
     data_row = [
         f"{server_ip}:{server_port}",
         f"{interval_start:.2f} - {time_elapsed:.2f}",
         f"{sent_mb:.2f} MB",
-        f"{bandwidth_mbps:.2f} Mbps"
+        f"{bandwidth:.2f} {format_unit['unit']}/s"
     ]
 
     if summary:
@@ -189,8 +197,8 @@ if __name__ == "__main__":
             num_bytes = parse_num_bytes(args.num)
         else:
             num_bytes = None
-
-        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size)
+        format_unit = parse_format_unit(args.format)
+        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size, format_unit, num_bytes)
     else:
         print("Please specify server mode with -s or --server")
 
