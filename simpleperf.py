@@ -66,7 +66,8 @@ def handle_client(connection, client_address, format_unit):
     # Modify the summary line to use format_unit
     summary = f"Received {received_data:.2f} {format_unit['unit']} in {time_elapsed:.2f} seconds\n" \
               f"Bandwidth: {bandwidth:.2f} {format_unit['unit']}/s"
-    print(summary)
+    print(f"Server: {summary}")
+
 
 
 # Client functions
@@ -119,7 +120,9 @@ def client_worker(server_ip, server_port, duration, interval,message_size, num_b
             if ack == b"ACK:BYE":
                 end_time = time.time()
                 time_elapsed = end_time - start_time
-                print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, time_elapsed, summary=True)
+                interval = time_elapsed if interval is None else interval
+                print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval, prev_sent_bytes,
+                               summary=True)
 
     except ConnectionError as e:
         print(f"Connection lost during transfer: {e}")
