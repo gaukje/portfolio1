@@ -4,11 +4,15 @@ import threading
 import time
 from socket import *
 
+# This is the main script for Simpleperf, a simplified version of iPerf for measuring network throughput.
 
 # Utility functions
-# parse_num_bytes(num_str): Converts a number string with a unit (B, KB, MB) to its corresponding integer value in bytes.
+
+# Converts a number string with a unit (B, KB, MB) to its corresponding integer value in bytes.
+# Arguments: num_str (string) - A string containing the number and its unit (e.g. '10MB')
+# Returns: num (int) - The integer value of the number in bytes.
 def parse_num_bytes(num_str):
-    units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
+    units = {'B': 1, 'K': 1000, 'M': 1000 * 1000}
     last_char = num_str[-1]
     if last_char in units:
         num = int(num_str[:-1]) * units[last_char]
@@ -16,16 +20,26 @@ def parse_num_bytes(num_str):
         num = int(num_str)
     return num
 
-# format_summary_line(headers, data): Formats a summary line for printing, with the columns aligned based on the maximum width of each column.
+# Formats a summary line for printing, with the columns aligned based on the maximum width of each column.
+# Arguments: headers (list) - A list of strings containing the column headers.
+#            data (list) - A list of strings containing the data to be printed.
+# Returns: summary (string) - A string containing the formatted summary line.
 def format_summary_line(headers, data):
     max_widths = [max(map(len, col)) for col in zip(headers, data)]
     return " ".join((val.ljust(width) for val, width in zip(data, max_widths)))
 
 
 # Server functions
-# server(server_ip, server_port, format_unit): Sets up a server listening on the given IP and port, and accepts incoming connections. For each connection, a new thread is started to handle the client.
+
+# Sets up a server listening on the given IP and port, and accepts incoming connections. For each connection, a new thread is started to handle the client.
+# Arguments: server_ip (string) - The IP address of the server.
+#            server_port (int) - The port number on which the server should listen.
+#            format_unit (dict) - A dictionary containing the format unit and its corresponding divisor.
+# Returns: None.
 def server(server_ip, server_port, format_unit):
+    # Set up socket and listen for incoming connections
     try:
+        # Set up socket and listen for incoming connections
         with socket(AF_INET, SOCK_STREAM) as server_socket:
             server_socket.bind((server_ip, server_port))
             server_socket.listen(5)
@@ -34,6 +48,7 @@ def server(server_ip, server_port, format_unit):
             print(f"A simpleperf server is listening on port {server_port}")
             print(f"---------------------------------------------")
 
+            # Accept incoming connections and receive data
             while True:
                 connection, client_address = server_socket.accept()
                 client_thread = threading.Thread(target=handle_client, args=(connection, client_address, format_unit))
