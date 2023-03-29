@@ -15,7 +15,7 @@ def parse_num_bytes(num_str):
         if num_unit in units:
             num = num_value * units[num_unit]
         else:
-            raise ValueError(f"Invalid unit '{num_unit}'. Supported units are B, KB, MB, and GB.")
+            raise ValueError(f"Invalid unit '{num_unit}'. Supported units are B, KB, and MB")
     else:
         num = int(num_str)
     return num
