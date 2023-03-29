@@ -4,6 +4,7 @@ import threading
 import time
 from socket import *
 
+
 # This is the main script for Simpleperf, a simplified version of iPerf for measuring network throughput.
 
 # Utility functions
@@ -19,6 +20,7 @@ def parse_num_bytes(num_str):
     else:
         num = int(num_str)
     return num
+
 
 # Formats a summary line for printing, with the columns aligned based on the maximum width of each column.
 # Arguments: headers (list) - A list of strings containing the column headers.
@@ -111,13 +113,12 @@ def handle_client(connection, client_address, format_unit):
 # - num_bytes (int or None): Number of bytes to transfer. If None, the transfer is indefinite.
 # Returns: None.
 def client(server_ip, server_port, duration, interval, parallel, message_size, format_unit, num_bytes=None):
-
     try:
         threads = []
         for _ in range(parallel):
             # Start a new thread for each connection to the server
             t = threading.Thread(target=client_worker, args=(
-            server_ip, server_port, duration, interval, format_unit, message_size, num_bytes))
+                server_ip, server_port, duration, interval, format_unit, message_size, num_bytes))
 
             t.start()
             threads.append(t)
@@ -130,6 +131,7 @@ def client(server_ip, server_port, duration, interval, parallel, message_size, f
         # Handle connection error and exit with status code 1
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
+
 
 # client_worker(server_ip, server_port, duration, interval, format_unit, message_size, num_bytes=None):
 # Connects to the server, sends data to it for the given duration, and prints statistics at specified intervals.
@@ -192,6 +194,7 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
+
 # This function prints the statistics for a given interval, including bandwidth and the amount of data transferred.
 # Arguments:
 # - client_socket (socket): The socket object representing the client connection.
@@ -204,27 +207,8 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
 # - prev_sent_bytes (int): The number of bytes sent in the previous interval.
 # - summary (bool): A flag indicating whether to print a summary line or not.
 # Returns: None.
-
-"""
-def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
-    # Calculate time elapsed, interval start time, and the amount of data sent in the given interval
-    time_elapsed = time.time() - start_time
-    interval_start = time_elapsed - interval
-    sent_data = sent_bytes / format_unit['divisor']
-    sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
-    # bandwidth = sent_data_interval / interval
-    bandwidth = 0 if interval == 0 else sent_data_interval / interval
-
-    # Define column headers and data row for printing
-    headers = ["ID", "Interval", "Transfer", "Bandwidth"]
-    data_row = [
-        f"{server_ip}:{server_port}",
-        f"{interval_start:.2f} - {time_elapsed:.2f}",
-        f"{sent_data:.2f} {format_unit['unit']}",
-        f"{bandwidth:.2f} {format_unit['unit']}/s"
-    ]
-    """
-def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
+def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int,
+                   interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
     # Calculate time elapsed, interval start time, and the amount of data sent in the given interval
     time_elapsed = time.time() - start_time
     interval = interval or time_elapsed  # If interval is None, use time_elapsed as the interval
@@ -282,11 +266,13 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", action="store_true", help="enable the server mode")
     parser.add_argument("-c", "--client", action="store_true", help="enable the client mode")
     parser.add_argument("-b", "--bind", type=str, default="0.0.0.0", help="IP address of the server's interface")
-    parser.add_argument("-p", "--port", type=positive_int, default=8080, help="port number on which the server should listen")
+    parser.add_argument("-p", "--port", type=positive_int, default=8080,
+                        help="port number on which the server should listen")
     parser.add_argument("-f", "--format", type=str, choices=["B", "KB", "MB"], default="MB",
                         help="format of summary of results")
     parser.add_argument("-I", "--server_ip", type=str, default="127.0.0.1", help="IP address of the server")
-    parser.add_argument("-t", "--time", type=positive_int, default=25, help="Total duration for which data should be generated")
+    parser.add_argument("-t", "--time", type=positive_int, default=25,
+                        help="Total duration for which data should be generated")
     parser.add_argument("-i", "--interval", type=positive_int, default=None, help="print statistics per z second")
     parser.add_argument("-n", "--num", type=str, help="Number of bytes")
     parser.add_argument("-P", "--parallel", type=positive_int, choices=range(1, 6), default=1,
@@ -310,7 +296,8 @@ if __name__ == "__main__":
             num_bytes = None
         format_unit = parse_format_unit(args.format)
         # Start the client
-        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size, format_unit, num_bytes)
+        client(args.server_ip, args.port, args.time, args.interval, args.parallel, args.message_size, format_unit,
+               num_bytes)
 
     else:
         print("Please specify server mode with -s or --server")
