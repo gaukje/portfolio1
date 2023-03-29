@@ -244,6 +244,10 @@ def parse_format_unit(format_unit):
     return {'unit': format_unit, 'divisor': units[format_unit]}
 
 
+# Function that validates that the argparse argument is a positive integer.
+# Returns:
+# - Error message if the argument is negative
+# - The integer value if the argument is correct
 def positive_int(value):
     ivalue = int(value)
     if ivalue <= 0:
