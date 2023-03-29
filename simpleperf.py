@@ -204,9 +204,30 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
 # - prev_sent_bytes (int): The number of bytes sent in the previous interval.
 # - summary (bool): A flag indicating whether to print a summary line or not.
 # Returns: None.
+
+"""
 def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
     # Calculate time elapsed, interval start time, and the amount of data sent in the given interval
     time_elapsed = time.time() - start_time
+    interval_start = time_elapsed - interval
+    sent_data = sent_bytes / format_unit['divisor']
+    sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
+    # bandwidth = sent_data_interval / interval
+    bandwidth = 0 if interval == 0 else sent_data_interval / interval
+
+    # Define column headers and data row for printing
+    headers = ["ID", "Interval", "Transfer", "Bandwidth"]
+    data_row = [
+        f"{server_ip}:{server_port}",
+        f"{interval_start:.2f} - {time_elapsed:.2f}",
+        f"{sent_data:.2f} {format_unit['unit']}",
+        f"{bandwidth:.2f} {format_unit['unit']}/s"
+    ]
+    """
+def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int, interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
+    # Calculate time elapsed, interval start time, and the amount of data sent in the given interval
+    time_elapsed = time.time() - start_time
+    interval = interval or time_elapsed  # If interval is None, use time_elapsed as the interval
     interval_start = time_elapsed - interval
     sent_data = sent_bytes / format_unit['divisor']
     sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
@@ -220,7 +241,6 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
         f"{sent_data:.2f} {format_unit['unit']}",
         f"{bandwidth:.2f} {format_unit['unit']}/s"
     ]
-
     # If a summary line is being printed, add a separator line before it
     if summary:
         print("----------------------------------------------------")
