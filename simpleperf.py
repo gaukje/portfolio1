@@ -246,8 +246,8 @@ def parse_format_unit(format_unit):
 
 # Function that validates that the argparse argument is a positive integer.
 # Returns:
-# - Error message if the argument is negative
-# - The integer value if the argument is correct
+# - Error message if the argument is a negative integer
+# - The integer value if the argument is implemented correctly
 def positive_int(value):
     ivalue = int(value)
     if ivalue <= 0:
@@ -262,14 +262,14 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", action="store_true", help="enable the server mode")
     parser.add_argument("-c", "--client", action="store_true", help="enable the client mode")
     parser.add_argument("-b", "--bind", type=str, default="0.0.0.0", help="IP address of the server's interface")
-    parser.add_argument("-p", "--port", type=int, default=8080, help="port number on which the server should listen")
+    parser.add_argument("-p", "--port", type=positive_int, default=8080, help="port number on which the server should listen")
     parser.add_argument("-f", "--format", type=str, choices=["B", "KB", "MB"], default="MB",
                         help="format of summary of results")
     parser.add_argument("-I", "--server_ip", type=str, default="127.0.0.1", help="IP address of the server")
     parser.add_argument("-t", "--time", type=positive_int, default=25, help="Total duration for which data should be generated")
     parser.add_argument("-i", "--interval", type=positive_int, default=None, help="print statistics per z second")
     parser.add_argument("-n", "--num", type=str, help="Number of bytes")
-    parser.add_argument("-P", "--parallel", type=int, choices=range(1, 6), default=1,
+    parser.add_argument("-P", "--parallel", type=positive_int, choices=range(1, 6), default=1,
                         help="creates parallel connections to connect to the server and send data - it must be 1 and "
                              "the max value should be 5 - default:1")
     parser.add_argument("-m", "--message_size", type=int, default=1000,
