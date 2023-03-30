@@ -139,7 +139,7 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
                            time.time() - last_interval_time, format_unit, prev_sent_bytes)
 
             client_socket.sendall(b"BYE")
-            ack = client_socket.recv(1024)
+            ack = client_socket.recv(1000)
 
             # Print final statistics after receiving an acknowledgement message from the server
             if ack == b"ACK:BYE":
@@ -157,9 +157,6 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
                    interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
 
     time_elapsed = time.time() - start_time
-    interval = interval or time_elapsed  # If interval is None, use time_elapsed as the interval
-    interval_start = time_elapsed - interval
-    sent_data = sent_bytes / format_unit['divisor']
     sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
     bandwidth = sent_data_interval / interval
 
@@ -167,8 +164,8 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
     headers = ["ID", "Interval", "Transfer", "Bandwidth"]
     data_row = [
         f"{server_ip}:{server_port}",
-        f"{interval_start:.2f} - {time_elapsed:.2f}",
-        f"{sent_data:.2f} {format_unit['unit']}",
+        f"{time_elapsed - interval:.2f} - {time_elapsed:.2f}",
+        f"{sent_data_interval:.2f} {format_unit['unit']}",
         f"{bandwidth:.2f} {format_unit['unit']}/s"
     ]
     # If a summary line is being printed, add a separator line before it
