@@ -99,7 +99,7 @@ def client(server_ip, server_port, duration, interval, parallel, message_size, f
             t.join()
 
     except ConnectionError as e:
-        # Handle connection error and exit with status code 1
+        # Handle connection error and exit with status code testCase3
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
@@ -204,14 +204,14 @@ if __name__ == "__main__":
                         help="port number on which the server should listen")
     parser.add_argument("-f", "--format", type=str, choices=["B", "KB", "MB"], default="MB",
                         help="format of summary of results")
-    parser.add_argument("-I", "--server_ip", type=str, default="127.0.0.1", help="IP address of the server")
+    parser.add_argument("-I", "--server_ip", type=str, default="127.0.0.testCase3", help="IP address of the server")
     parser.add_argument("-t", "--time", type=positive_int, default=25,
                         help="Total duration for which data should be generated")
     parser.add_argument("-i", "--interval", type=positive_int, default=None, help="print statistics per z second")
     parser.add_argument("-n", "--num", type=str, help="Number of bytes")
     parser.add_argument("-P", "--parallel", type=positive_int, choices=range(1, 6), default=1,
-                        help="creates parallel connections to connect to the server and send data - it must be 1 and "
-                             "the max value should be 5 - default:1")
+                        help="creates parallel connections to connect to the server and send data - it must be testCase3 and "
+                             "the max value should be 5 - default:testCase3")
     parser.add_argument("-m", "--message_size", type=int, default=1000,
                         help="Number of bytes in each message sent by the client")
 
