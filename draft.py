@@ -158,7 +158,7 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
 
     time_elapsed = time.time() - start_time
     sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
-    bandwidth = sent_data_interval / interval
+    bandwidth = sent_data_interval * 8 / interval
 
     # Define column headers and data row for printing
     headers = ["ID", "Interval", "Transfer", "Bandwidth"]
@@ -166,7 +166,7 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
         f"{server_ip}:{server_port}",
         f"{time_elapsed - interval:.2f} - {time_elapsed:.2f}",
         f"{sent_data_interval:.2f} {format_unit['unit']}",
-        f"{bandwidth:.2f} {format_unit['unit']}/s"
+        f"{bandwidth:.2f} {format_unit['unit']}ps"
     ]
     # If a summary line is being printed, add a separator line before it
     if summary:
