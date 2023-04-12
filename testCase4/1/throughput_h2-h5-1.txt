@@ -3,4 +3,4 @@ A simpleperf client connecting to server 10.0.5.3, port 8080
 ---------------------------------------------
 Client connected with 10.0.5.3 port 8080
 ID            Interval     Transfer Bandwidth
-10.0.5.3:8080 0.00 - 25.19 20.45 MB 0.81 MB/s
+10.0.5.3:8080 0.00 - 25.07 37.52 MB 11.97 MBps
