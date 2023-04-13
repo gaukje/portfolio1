@@ -6,7 +6,7 @@ from socket import *
 import re
 
 def parse_num_bytes(num_str):
-    units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
+    units = {'B': 1, 'KB': 1000, 'Mb': 1000 * 1000}
     match = re.match(r"([0-9]+)([a-z]+)", num_str, re.I)
     if match:
         num_value, num_unit = match.groups()
