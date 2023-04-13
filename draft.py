@@ -6,7 +6,7 @@ from socket import *
 import re
 
 def parse_num_bytes(num_str):
-    units = {'B': 1, 'KB': 1000, 'Mb': 1000 * 1000}
+    units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
     match = re.match(r"([0-9]+)([a-z]+)", num_str, re.I)
     if match:
         num_value, num_unit = match.groups()
@@ -75,7 +75,7 @@ def handle_client(connection, client_address, format_unit):
 
     # Modify the summary line to use format_unit
     summary = f"Received {received_data:.2f} {format_unit['unit']} in {time_elapsed:.2f} seconds\n" \
-              f"Bandwidth: {bandwidth:.2f} {format_unit['unit']}/s"
+              f"Bandwidth: {bandwidth:.2f} {format_unit['unit']}ps"
     # Print the summary line
     print(summary)
 
