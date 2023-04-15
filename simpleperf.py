@@ -3,7 +3,7 @@ import sys
 import threading
 import time
 from socket import *
-
+import re
 
 # This is the main script for Simpleperf, a simplified version of iPerf for measuring network throughput.
 
@@ -13,10 +13,16 @@ from socket import *
 # Arguments: num_str (string) - A string containing the number and its unit (e.g. '10MB')
 # Returns: num (int) - The integer value of the number in bytes.
 def parse_num_bytes(num_str):
-    units = {'B': 1, 'K': 1000, 'M': 1000 * 1000}
-    last_char = num_str[-1]
-    if last_char in units:
-        num = int(num_str[:-1]) * units[last_char]
+    units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
+    match = re.match(r"([0-9]+)([a-z]+)", num_str, re.I)
+    if match:
+        num_value, num_unit = match.groups()
+        num_value = int(num_value)
+        num_unit = num_unit.upper()
+        if num_unit in units:
+            num = num_value * units[num_unit]
+        else:
+            raise ValueError(f"Invalid unit '{num_unit}'. Supported units are B, KB, and MB")
     else:
         num = int(num_str)
     return num
@@ -94,7 +100,7 @@ def handle_client(connection, client_address, format_unit):
 
     # Modify the summary line to use format_unit
     summary = f"Received {received_data:.2f} {format_unit['unit']} in {time_elapsed:.2f} seconds\n" \
-              f"Bandwidth: {bandwidth:.2f} {format_unit['unit']}/s"
+              f"Bandwidth: {bandwidth:.2f} {format_unit['unit']}ps"
     # Print the summary line
     print(summary)
 
@@ -113,6 +119,9 @@ def handle_client(connection, client_address, format_unit):
 # - num_bytes (int or None): Number of bytes to transfer. If None, the transfer is indefinite.
 # Returns: None.
 def client(server_ip, server_port, duration, interval, parallel, message_size, format_unit, num_bytes=None):
+    if num_bytes is not None:
+        # Set the duration to a large number to ensure all bytes are sent
+        duration = sys.maxsize
     try:
         threads = []
         for _ in range(parallel):
@@ -180,7 +189,7 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
                            time.time() - last_interval_time, format_unit, prev_sent_bytes)
 
             client_socket.sendall(b"BYE")
-            ack = client_socket.recv(1024)
+            ack = client_socket.recv(1000)
 
             # Print final statistics after receiving an acknowledgement message from the server
             if ack == b"ACK:BYE":
@@ -209,21 +218,17 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
 # Returns: None.
 def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int,
                    interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
-    # Calculate time elapsed, interval start time, and the amount of data sent in the given interval
     time_elapsed = time.time() - start_time
-    interval = interval or time_elapsed  # If interval is None, use time_elapsed as the interval
-    interval_start = time_elapsed - interval
-    sent_data = sent_bytes / format_unit['divisor']
     sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
-    bandwidth = sent_data_interval / interval
+    bandwidth = sent_data_interval * 8 / interval
 
     # Define column headers and data row for printing
     headers = ["ID", "Interval", "Transfer", "Bandwidth"]
     data_row = [
         f"{server_ip}:{server_port}",
-        f"{interval_start:.2f} - {time_elapsed:.2f}",
-        f"{sent_data:.2f} {format_unit['unit']}",
-        f"{bandwidth:.2f} {format_unit['unit']}/s"
+        f"{time_elapsed - interval:.2f} - {time_elapsed:.2f}",
+        f"{sent_data_interval:.2f} {format_unit['unit']}",
+        f"{bandwidth:.2f} {format_unit['unit']}ps"
     ]
     # If a summary line is being printed, add a separator line before it
     if summary:
@@ -236,6 +241,7 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
 
         for row in table_data:
             print(" ".join((val.ljust(width) for val, width in zip(row, max_widths))))
+
 
 
 # This function parses the format unit string and returns a dictionary with the unit and its corresponding divisor.
@@ -316,25 +322,25 @@ if __name__ == "__main__":
 
     The format_summary_line function takes a list of column headers and a list of data, and returns a formatted string 
     with the columns aligned based on the maximum width of each column.
-    
+
     The parse_format_unit function takes a string specifying the format unit (e.g. "MB"), and returns a dictionary with 
     the unit and its corresponding divisor (e.g. {'unit': 'MB', 'divisor': 1000000}).
 
     The server function sets up a socket and listens for incoming connections. For each connection, a new thread is 
     started to handle the client using the handle_client function.
-    
+
     The handle_client function receives data from the client, calculates the received data size and bandwidth, and 
     prints a summary.
-    
+
     The client function starts the client, which creates the specified number of parallel connections to the server and 
     sends data. It creates a separate thread for each connection using the client_worker function.
-    
+
     The client_worker function connects to the server, sends data to it for the given duration, and prints statistics 
     at specified intervals.
-    
+
     The print_interval function prints the statistics for a given interval, including bandwidth and the amount of 
     data transferred.
-    
+
     Overall, the Simpleperf tool provides a simple way to measure network throughput using either a server or 
     client mode. It supports specifying various parameters such as IP address, port number, duration, interval, 
     parallelism, message size, and format unit. The tool uses threads to handle multiple connections in parallelism, 
