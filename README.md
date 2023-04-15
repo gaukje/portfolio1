@@ -1,38 +1,59 @@
+This script is a simple network performance measurement tool that supports server and client modes for data transmission
+and reception. The functions work together to parse command-line arguments, set up server and client sockets, handle 
+incoming connections, send data, calculate bandwidth and time elapsed, and format and print output. The script can
+be used by first running it in server mode on one machine and then running it in client mode on another machine, 
+specifying the required command-line arguments for configuring IP addresses, ports, format units, duration, intervals, 
+parallel connections, and message sizes.
 
-    Import necessary libraries:
-    The code imports the required libraries for sockets, threading, argparse (for command-line argument parsing), and the time module.
+This script is a simple performance measurement tool that can be used for network testing. It supports both server and 
+client modes, allowing for the transmission and reception of data over a network.
 
-    Utility functions:
-        parse_num_bytes: Parses a string representing a number of bytes, and returns the corresponding integer value (e.g., "10M" -> 10,000,000).
-        format_summary_line: Formats the data for printing as a table row by adjusting the column widths.
+Key Functions
+parse_num_bytes(num_str)
 
-    Server functions:
-        server: The main function for server mode. It creates a socket, binds it to the given IP and port, and listens for incoming connections. When a client connects, it starts a new thread to handle that client using the handle_client function.
-        handle_client: This function is the target for each client-handling thread. It receives data from the client, tracks the received bytes, and calculates the time elapsed. When the client sends the "BYE" message, it sends an acknowledgment and closes the connection. Finally, it prints a summary of the received data and bandwidth.
+This function takes a string representing a number of bytes and converts it into an integer. The string can include 
+units such as B (bytes), KB (kilobytes), and MB (megabytes). It returns the number of bytes as an integer.
+format_summary_line(headers, data)
 
-    Client functions:
-        client: The main function for client mode. It creates and starts multiple threads (parallel number of threads) that will send data to the server. After starting all the threads, it waits for them to finish using t.join().
-        client_worker: The target function for each thread created in the client function. It establishes a connection with the server, sends data in chunks of 1000 bytes, and tracks the sent bytes and time elapsed. It also handles the intervals by calling the print_interval function when the specified interval has passed. At the end, it sends a "BYE" message to the server to signal the end of the connection, and then prints the final summary using print_interval.
-        print_interval: This function prints the statistics for each interval. It calculates the time elapsed since the start time, the interval start, and the sent megabytes and bandwidth for the interval. It then prints the interval statistics in the desired format. If the summary flag is True, it prints a separator line instead of the table headers.
+This function formats a summary line for the output. It takes a list of headers and a list of data values, aligns them, 
+and returns a formatted string.
+server(server_ip, server_port, format_unit)
 
-    Argument parsing and main code execution:
-        The code defines an argparse.ArgumentParser instance to handle command-line arguments, with options for server and client modes, IP addresses, port numbers, time intervals, number of bytes to send, and parallel connections.
-        Based on the parsed arguments, the code either starts the server mode with the server function or the client mode with the client function.
+This function sets up a server socket to listen for incoming connections. When a connection is accepted, it creates a 
 
-This code provides a simple tool for measuring network performance by sending data between a client and a server, with options for specifying the number of bytes to send, the interval to print statistics, and the number of parallel connections.
+new thread to handle the client using the handle_client() function.
+handle_client(connection, client_address, format_unit)
 
-Here’s a short summary of the building blocks that simpleperf consists of. 
+This function handles a client connection. It continuously receives data from the client and calculates the amount of 
+data received, bandwidth, and time elapsed. When the connection is closed, it prints a summary of the data transfer.
+client(server_ip, server_port, duration, interval, parallel, message_size, format_unit, num_bytes)
 
-Argument parsing: The script utilizes the built-in “argparse” module to parse command-line arguments, allowing user to specify which mode they want to run the program in, in addition to various parameters such as duration, number of parallel connections, unit (B, KB, MB), etc.
+This function initiates the client mode. It creates a specified number of parallel connections to the server and sends 
+data. The data transmission continues for a given duration or until the specified number of bytes has been sent.
+client_worker(server_ip, server_port, duration, interval, format_unit, message_size, num_bytes)
 
-Socket: The program uses Python’s “socket” module to create and manage connections. The server listens for incoming connections using a “SOCK_STREAM” socket, while the client creates a “SOCK_STREAM” socket to connect to the server.
+This function is responsible for connecting to the server and continuously sending data until the specified duration or 
+number of bytes has been reached. It also prints statistics at specified intervals.
 
-Server: The server function listens for incoming connections and creates a new thread to handle each client that wishes to connect by using the handle_client function. This function receives data from the client. Tracks the number of received bytes, and calculates the bandwidth and time elapsed for the connection. The server continues to accept new connections until it’s manually terminated.
+"print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval, format_unit, prev_sent_bytes, summary)
 
-Client:  The client function is able to create parallel connections to the server based on the specified number of parallel connections. It uses the client_worker function to send data to the server continuously for the given duration or until the specified number of bytes is sent. The client tracks the number of sent bytes and prints the bandwidth statistics at specified intervals.
+This function prints the data transfer statistics in a formatted table at specified intervals. It can also print a 
+summary line when the data transfer is complete.
 
-Message: The client send messages of a specified size. Additionally the client can print statistics at regular intervals.
+parse_format_unit(format_unit)
 
-Format: The parse_format_unit function is responsible for parsing the data format specified by the user and returning the appropriate unit and divisor for calculations.
+This function converts a unit string (B, KB, or MB) into a dictionary containing the unit string and its corresponding divisor.
+positive_int(value)
 
-Termination: The client sends a “BYE” message to the server after specified duration or when the specified number of bytes is met. The server acknowledges the “BYE” message by sending an “ACK:BYE” message back to the client. Both the server and the client then close their socket connections.
+This function is used in the argument parser to check if a provided value is a positive integer.
+Command-Line Arguments
+
+The script accepts several command-line arguments for configuring server and client modes, IP addresses, ports, format 
+units, duration, intervals, parallel connections, message sizes, and more.
+Usage
+
+To use this script, first run it in server mode on the machine that will act as the server. Then, run it in client mode 
+on the machine that will act as the client. The script will send data between the client and server and provide 
+performance statistics.
+
+Please note that you need to specify the format units with the -f flag when running both the server and the client.

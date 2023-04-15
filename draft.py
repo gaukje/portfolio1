@@ -5,6 +5,13 @@ import time
 from socket import *
 import re
 
+# This is the main script for Simpleperf, a simplified version of iPerf for measuring network throughput.
+
+# Utility functions
+
+# Converts a number string with a unit (B, KB, MB) to its corresponding integer value in bytes.
+# Arguments: num_str (string) - A string containing the number and its unit (e.g. '10MB')
+# Returns: num (int) - The integer value of the number in bytes.
 def parse_num_bytes(num_str):
     units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
     match = re.match(r"([0-9]+)([a-z]+)", num_str, re.I)
@@ -20,11 +27,24 @@ def parse_num_bytes(num_str):
         num = int(num_str)
     return num
 
+
+# Formats a summary line for printing, with the columns aligned based on the maximum width of each column.
+# Arguments: headers (list) - A list of strings containing the column headers.
+#            data (list) - A list of strings containing the data to be printed.
+# Returns: summary (string) - A string containing the formatted summary line.
 def format_summary_line(headers, data):
     max_widths = [max(map(len, col)) for col in zip(headers, data)]
     return " ".join((val.ljust(width) for val, width in zip(data, max_widths)))
 
 
+# Server functions
+
+# Sets up a server listening on the given IP and port, and accepts incoming connections. For each connection, a new
+# thread is started to handle the client.
+# Arguments: server_ip (string) - The IP address of the server.
+#            server_port (int) - The port number on which the server should listen.
+#            format_unit (dict) - A dictionary containing the format unit and its corresponding divisor.
+# Returns: None.
 def server(server_ip, server_port, format_unit):
     # Set up socket and listen for incoming connections
     try:
@@ -48,6 +68,11 @@ def server(server_ip, server_port, format_unit):
         print(f"Failed to connect to server: {e}")
 
 
+# Receives data from the client, calculates the received data size and bandwidth, and prints a summary.
+# Arguments: connection (socket) - The socket object representing the client connection.
+#            client_address (tuple) - A tuple containing the client's IP address and port number.
+#            format_unit (dict) - A dictionary containing the format unit and its corresponding divisor.
+# Returns: None.
 def handle_client(connection, client_address, format_unit):
     # Initialize variables to track received data and time elapsed
     received_bytes = 0
@@ -80,6 +105,19 @@ def handle_client(connection, client_address, format_unit):
     print(summary)
 
 
+# Client functions
+# client(server_ip, server_port, duration, interval, parallel, num_bytes=None):
+# Starts the client, which creates the specified number of parallel connections to the server and sends data.
+# Arguments:
+# - server_ip (string): IP address of the server.
+# - server_port (int): Port number on which the server is listening.
+# - duration (int): Total duration for which data should be generated.
+# - interval (int): Print statistics per z second.
+# - parallel (int): Number of parallel connections to the server.
+# - message_size (int): Number of bytes in each message sent by the client.
+# - format_unit (dict): A dictionary containing the format unit and its corresponding divisor.
+# - num_bytes (int or None): Number of bytes to transfer. If None, the transfer is indefinite.
+# Returns: None.
 def client(server_ip, server_port, duration, interval, parallel, message_size, format_unit, num_bytes=None):
     if num_bytes is not None:
         # Set the duration to a large number to ensure all bytes are sent
@@ -103,6 +141,18 @@ def client(server_ip, server_port, duration, interval, parallel, message_size, f
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
+
+# client_worker(server_ip, server_port, duration, interval, format_unit, message_size, num_bytes=None):
+# Connects to the server, sends data to it for the given duration, and prints statistics at specified intervals.
+# Arguments:
+# - server_ip (string): IP address of the server.
+# - server_port (int): Port number on which the server is listening.
+# - duration (int): Total duration for which data should be generated.
+# - interval (int): Print statistics per z second.
+# - format_unit (dict): A dictionary containing the format unit and its corresponding divisor.
+# - message_size (int): Number of bytes in each message sent by the client.
+# - num_bytes (int or None): Number of bytes to transfer. If None, the transfer is indefinite.
+# Returns: None.
 def client_worker(server_ip, server_port, duration, interval, format_unit, message_size, num_bytes=None):
     try:
         with socket(AF_INET, SOCK_STREAM) as client_socket:
@@ -153,9 +203,21 @@ def client_worker(server_ip, server_port, duration, interval, format_unit, messa
         print(f"Connection lost during transfer: {e}")
         sys.exit(1)
 
+
+# This function prints the statistics for a given interval, including bandwidth and the amount of data transferred.
+# Arguments:
+# - client_socket (socket): The socket object representing the client connection.
+# - start_time (float): The start time of the data transfer.
+# - sent_bytes (int): The number of bytes sent so far.
+# - server_ip (str): The IP address of the server.
+# - server_port (int): The port number of the server.
+# - interval (float): The interval for which the statistics are being printed.
+# - format_unit (dict): A dictionary containing the format unit and its corresponding divisor.
+# - prev_sent_bytes (int): The number of bytes sent in the previous interval.
+# - summary (bool): A flag indicating whether to print a summary line or not.
+# Returns: None.
 def print_interval(client_socket: socket, start_time: float, sent_bytes: int, server_ip: str, server_port: int,
                    interval: float, format_unit: dict, prev_sent_bytes: int = 0, summary=False):
-
     time_elapsed = time.time() - start_time
     sent_data_interval = (sent_bytes - prev_sent_bytes) / format_unit['divisor']
     bandwidth = sent_data_interval * 8 / interval
@@ -181,11 +243,21 @@ def print_interval(client_socket: socket, start_time: float, sent_bytes: int, se
             print(" ".join((val.ljust(width) for val, width in zip(row, max_widths))))
 
 
+
+# This function parses the format unit string and returns a dictionary with the unit and its corresponding divisor.
+# Arguments:
+# - format_unit (str): The format unit string.
+# Returns:
+# - A dictionary containing the unit and its corresponding divisor.
 def parse_format_unit(format_unit):
     units = {'B': 1, 'KB': 1000, 'MB': 1000 * 1000}
     return {'unit': format_unit, 'divisor': units[format_unit]}
 
 
+# Function that validates that the argparse argument is a positive integer.
+# Returns:
+# - Error message if the argument is a negative integer
+# - The integer value if the argument is implemented correctly
 def positive_int(value):
     ivalue = int(value)
     if ivalue <= 0:
@@ -237,3 +309,41 @@ if __name__ == "__main__":
         print("Please specify server mode with -s or --server")
 
     # Need to specify units with the -f flag on when running the client aswell
+
+    """
+    The main function parses the command-line arguments using argparse.ArgumentParser, and then starts the server or 
+    client depending on the specified arguments. If the --server argument is specified, the server function is called 
+    with the specified IP address, port number, and format unit. If the --client argument is specified, the client 
+    function is called with the specified server IP address, port number, duration, interval, parallelism, message size,
+    and format unit. If neither --server nor --client is specified, an error message is printed.
+
+    The parse_num_bytes function takes a string containing a number and a unit (e.g. "10MB"), and returns the integer 
+    value of the number in bytes.
+
+    The format_summary_line function takes a list of column headers and a list of data, and returns a formatted string 
+    with the columns aligned based on the maximum width of each column.
+
+    The parse_format_unit function takes a string specifying the format unit (e.g. "MB"), and returns a dictionary with 
+    the unit and its corresponding divisor (e.g. {'unit': 'MB', 'divisor': 1000000}).
+
+    The server function sets up a socket and listens for incoming connections. For each connection, a new thread is 
+    started to handle the client using the handle_client function.
+
+    The handle_client function receives data from the client, calculates the received data size and bandwidth, and 
+    prints a summary.
+
+    The client function starts the client, which creates the specified number of parallel connections to the server and 
+    sends data. It creates a separate thread for each connection using the client_worker function.
+
+    The client_worker function connects to the server, sends data to it for the given duration, and prints statistics 
+    at specified intervals.
+
+    The print_interval function prints the statistics for a given interval, including bandwidth and the amount of 
+    data transferred.
+
+    Overall, the Simpleperf tool provides a simple way to measure network throughput using either a server or 
+    client mode. It supports specifying various parameters such as IP address, port number, duration, interval, 
+    parallelism, message size, and format unit. The tool uses threads to handle multiple connections in parallelism, 
+    message size, and format unit. The tool uses threads to handle multiple connections in parallel and prints 
+    statistics at specified intervals to monitor network performance.
+    """
