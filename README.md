@@ -81,9 +81,9 @@ to the same network.
 
 ### Network Test
 1. On Machine A (server), run the Simpleperf server:
-> python simpleperf.py -s -b <IP> -p <port>
+> python simpleperf.py -s -b (IP) -p (port)
 2. On Machine B (client), run the Simpleperf client: 
-> python simpleperf.py -c -I <IP> -p <port>
+> python simpleperf.py -c -I (IP) -p (port)
 3. Observe the generated data on both machines.
 
 By following these steps, you can generate data using Simpleperf and analyze the network performance between the client 

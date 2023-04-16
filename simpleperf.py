@@ -282,8 +282,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--interval", type=positive_int, default=None, help="print statistics per z second")
     parser.add_argument("-n", "--num", type=str, help="Number of bytes")
     parser.add_argument("-P", "--parallel", type=positive_int, choices=range(1, 6), default=1,
-                        help="creates parallel connections to connect to the server and send data - it must be testCase3 and "
-                             "the max value should be 5 - default:testCase3")
+                        help="creates parallel connections to connect to the server and send data")
     parser.add_argument("-m", "--message_size", type=int, default=1000,
                         help="Number of bytes in each message sent by the client")
 
@@ -309,41 +308,3 @@ if __name__ == "__main__":
         print("Please specify server mode with -s or --server")
 
     # Need to specify units with the -f flag on when running the client aswell
-
-    """
-    The main function parses the command-line arguments using argparse.ArgumentParser, and then starts the server or 
-    client depending on the specified arguments. If the --server argument is specified, the server function is called 
-    with the specified IP address, port number, and format unit. If the --client argument is specified, the client 
-    function is called with the specified server IP address, port number, duration, interval, parallelism, message size,
-    and format unit. If neither --server nor --client is specified, an error message is printed.
-
-    The parse_num_bytes function takes a string containing a number and a unit (e.g. "10MB"), and returns the integer 
-    value of the number in bytes.
-
-    The format_summary_line function takes a list of column headers and a list of data, and returns a formatted string 
-    with the columns aligned based on the maximum width of each column.
-
-    The parse_format_unit function takes a string specifying the format unit (e.g. "MB"), and returns a dictionary with 
-    the unit and its corresponding divisor (e.g. {'unit': 'MB', 'divisor': 1000000}).
-
-    The server function sets up a socket and listens for incoming connections. For each connection, a new thread is 
-    started to handle the client using the handle_client function.
-
-    The handle_client function receives data from the client, calculates the received data size and bandwidth, and 
-    prints a summary.
-
-    The client function starts the client, which creates the specified number of parallel connections to the server and 
-    sends data. It creates a separate thread for each connection using the client_worker function.
-
-    The client_worker function connects to the server, sends data to it for the given duration, and prints statistics 
-    at specified intervals.
-
-    The print_interval function prints the statistics for a given interval, including bandwidth and the amount of 
-    data transferred.
-
-    Overall, the Simpleperf tool provides a simple way to measure network throughput using either a server or 
-    client mode. It supports specifying various parameters such as IP address, port number, duration, interval, 
-    parallelism, message size, and format unit. The tool uses threads to handle multiple connections in parallelism, 
-    message size, and format unit. The tool uses threads to handle multiple connections in parallel and prints 
-    statistics at specified intervals to monitor network performance.
-    """
