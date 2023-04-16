@@ -1,59 +1,90 @@
-This script is a simple network performance measurement tool that supports server and client modes for data transmission
-and reception. The functions work together to parse command-line arguments, set up server and client sockets, handle 
-incoming connections, send data, calculate bandwidth and time elapsed, and format and print output. The script can
-be used by first running it in server mode on one machine and then running it in client mode on another machine, 
-specifying the required command-line arguments for configuring IP addresses, ports, format units, duration, intervals, 
-parallel connections, and message sizes.
+# Simpleperf - A Simple Network Performance Tool
 
-This script is a simple performance measurement tool that can be used for network testing. It supports both server and 
-client modes, allowing for the transmission and reception of data over a network.
+## Description
 
-Key Functions
-parse_num_bytes(num_str)
+Simpleperf is a basic network performance tool designed to measure network throughput. It provides a server and client 
+mode, allowing users to set up a server to listen for incoming connections and clients to connect and send data to 
+measure performance. The tool uses Python sockets and threading to manage multiple client connections simultaneously. 
+This README file provides a detailed explanation of the code, functions, and steps to run Simpleperf and generate data.
 
-This function takes a string representing a number of bytes and converts it into an integer. The string can include 
-units such as B (bytes), KB (kilobytes), and MB (megabytes). It returns the number of bytes as an integer.
-format_summary_line(headers, data)
+## Usage
 
-This function formats a summary line for the output. It takes a list of headers and a list of data values, aligns them, 
-and returns a formatted string.
-server(server_ip, server_port, format_unit)
+### Server Mode
 
-This function sets up a server socket to listen for incoming connections. When a connection is accepted, it creates a 
+To run Simpleperf in server mode, execute the following command:
+> python simpleperf.py -s
 
-new thread to handle the client using the handle_client() function.
-handle_client(connection, client_address, format_unit)
+This will start a Simpleperf server that listens for incoming connections on the default IP address 0.0.0.0 and port 
+8080 . You can customize the IP address and port using the -b or --bind and -p or --port options. For example:
+> python simpleperf.py -s -b 192.168.1.100 -p 5001
 
-This function handles a client connection. It continuously receives data from the client and calculates the amount of 
-data received, bandwidth, and time elapsed. When the connection is closed, it prints a summary of the data transfer.
-client(server_ip, server_port, duration, interval, parallel, message_size, format_unit, num_bytes)
+### Client Mode
 
-This function initiates the client mode. It creates a specified number of parallel connections to the server and sends 
-data. The data transmission continues for a given duration or until the specified number of bytes has been sent.
-client_worker(server_ip, server_port, duration, interval, format_unit, message_size, num_bytes)
+To run Simpleperf in client mode, execute the following command:
+> python simpleperf.py -c
 
-This function is responsible for connecting to the server and continuously sending data until the specified duration or 
-number of bytes has been reached. It also prints statistics at specified intervals.
+This will start a Simpleperf client that connects to a Simpleperf server running on the default IP address 127.0.0.1 and 
+port 8080. You can customize the server IP address and port using the -I or --server_ip and -p or --port options, 
+respectively. For example:
 
-"print_interval(client_socket, start_time, sent_bytes, server_ip, server_port, interval, format_unit, prev_sent_bytes, summary)
+> python simpleperf.py -c -I 192.168.1.100 -p 9000
 
-This function prints the data transfer statistics in a formatted table at specified intervals. It can also print a 
-summary line when the data transfer is complete.
+### Options
+- -f or --format: Choose the format of the summary results (B, KB, or MB).
+- -t or --time: Set the total duration (in seconds) for which data should be generated.
+- -i or --interval: Print statistics per specified interval (in seconds).
+- -n or --num: Set the number of bytes to send.
+- -P or --parallel: Create parallel connections to the server and send data (default is 1, max value is 5).
+- -m or --message_size: Set the number of bytes in each message sent by the client.
 
-parse_format_unit(format_unit)
+### Example with Custom Options
 
-This function converts a unit string (B, KB, or MB) into a dictionary containing the unit string and its corresponding divisor.
-positive_int(value)
+> python simpleperf.py -c -I 10.0.5.2 -p 8080 -f KB -t 30 -i 5
 
-This function is used in the argument parser to check if a provided value is a positive integer.
-Command-Line Arguments
+## Functions
 
-The script accepts several command-line arguments for configuring server and client modes, IP addresses, ports, format 
-units, duration, intervals, parallel connections, message sizes, and more.
-Usage
+### parse_num_bytes(num_str)
+This function converts a number string with a unit (B, KB, MB) to its corresponding integer value in bytes.
 
-To use this script, first run it in server mode on the machine that will act as the server. Then, run it in client mode 
-on the machine that will act as the client. The script will send data between the client and server and provide 
-performance statistics.
+### format_summary_line(headers, data)
+This function formats a summary line for printing results in a neat, column-aligned manner.
 
-Please note that you need to specify the format units with the -f flag when running both the server and the client.
+### server(server_ip, server_port, format_unit)
+This function sets up a Simpleperf server that listens for incoming connections on the specified IP address and port. 
+It continuously accepts incoming connections and receives data, spawning a new thread to handle each client connection 
+using the handle_client function.
+
+### handle_client(connection, client_address, format_unit)
+This function handles individual client connections for the server. It receives data from the client and tracks the 
+received data and time elapsed. When the client sends a "BYE" message, it calculates the total data received, time taken, 
+and throughput. Finally, it prints a summary of the client's performance.
+
+### client(server_ip, server_port, format_unit, duration, interval, num_bytes, parallel, message_size)
+This function sets up a Simpleperf client that connects to the specified server IP address and port. It sends data 
+continuously to the server according to the specified duration, interval, number of bytes, parallel connections, and 
+message size. It calculates the total data sent, time taken, and throughput, printing a summary of the client's performance.
+
+### send_data(connection, server_address, format_unit, duration, interval, num_bytes, message_size)
+This function sends data from the client to the server continuously based on the specified duration, interval, number 
+of bytes, and message size. It calculates the total data sent, time taken, and throughput, printing a summary of the 
+client's performance.
+
+## Tests
+To generate data using Simpleperf, you can run tests on your local machine or between two different machines connected 
+to the same network.
+
+### Local Machine Test
+1. Open a terminal and run the Simpleperf server:
+> python simpleperf.py -s
+2. Open another terminal and run the Simpleperf client:
+> python simpleperf.py -c
+
+### Network Test
+1. On Machine A (server), run the Simpleperf server:
+> python simpleperf.py -s -b <IP> -p <port>
+2. On Machine B (client), run the Simpleperf client: 
+> python simpleperf.py -c -I <IP> -p <port>
+3. Observe the generated data on both machines.
+
+By following these steps, you can generate data using Simpleperf and analyze the network performance between the client 
+and the server.
